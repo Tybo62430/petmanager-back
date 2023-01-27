@@ -34,7 +34,7 @@ final class OpenApiFactory implements OpenApiFactoryInterface
         $schemas['Credentials'] = new \ArrayObject([
             'type' => 'object',
             'properties' => [
-                'username' => [
+                'email' => [
                     'type' => 'string',
                     'example' => 'test@test.fr',
                 ],

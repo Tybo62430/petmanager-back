@@ -25,6 +25,7 @@ security:
       stateless: true
       provider: app_user_provider
       json_login:
+        username_path: email
         check_path: /api/login
         success_handler: lexik_jwt_authentication.handler.authentication_success
         failure_handler: lexik_jwt_authentication.handler.authentication_failure
@@ -33,7 +34,14 @@ security:
       pattern: ^/api
       stateless: true
       provider: jwt
+      entry_point: jwt
+      json_login:
+        check_path: /api/login # or, if you have defined a route for your login path, the route name you used
+        success_handler: lexik_jwt_authentication.handler.authentication_success
+        failure_handler: lexik_jwt_authentication.handler.authentication_failure
       jwt: ~
+      refresh_jwt:
+        check_path: /api/token/refresh # or, you may use the `api_refresh_token` route name
 
     # activate different ways to authenticate
     # https://symfony.com/doc/current/security.html#the-firewall
