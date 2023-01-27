@@ -6,18 +6,21 @@ use ApiPlatform\Action\NotFoundAction;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
 use App\Controller\MeController;
 use App\Repository\UserRepository;
+use App\State\UserPasswordHasher;
 use Doctrine\ORM\Mapping as ORM;
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ApiResource(
-    security: 'is_granted("ROLE_USER")',
     operations: [
+        new Post(processor: UserPasswordHasher::class),
         new Get(
             name: 'me',
             uriTemplate: '/me',
@@ -26,12 +29,14 @@ use Symfony\Component\Serializer\Annotation\Groups;
             read: false,
             openapiContext: [
                 'security' => [['bearerAuth' => []]]
-            ]
+            ],
+            security: 'is_granted("ROLE_USER")'
         ),
     ],
     normalizationContext: [
         'groups' => ['read:User']
-    ]
+    ],
+    denormalizationContext: ['groups' => ['user:create', 'user:update']],
 )]
 class User implements UserInterface, PasswordAuthenticatedUserInterface, JWTUserInterface
 {
@@ -42,7 +47,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, JWTUser
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['read:User'])]
+    #[Groups(['read:User', 'user:create', 'user:update'])]
     private ?string $email = null;
 
     #[ORM\Column]
@@ -54,6 +59,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, JWTUser
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    #[Assert\NotBlank(groups: ['user:create'])]
+    #[Groups(['user:create', 'user:update'])]
+    private ?string $plainPassword = null;
 
     public function getId(): ?int
     {
@@ -118,6 +127,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, JWTUser
     public function setPassword(string $password): self
     {
         $this->password = $password;
+
+        return $this;
+    }
+
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $painPassword): self
+    {
+        $this->plainPassword = $painPassword;
 
         return $this;
     }
